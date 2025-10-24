@@ -24,22 +24,69 @@ height - people
 number of games - appearances
 team - appearances
 
-SELECT playerid, namefirst AS first_name, namelast AS last_name, height,
-(
-SELECT teamid
-FROM appearances
-WHERE playerid = p.playerid
+SELECT
+    p.namefirst AS first_name,
+    p.namelast AS last_name,
+    p.height,
+    (
+        SELECT a.g_all
+        FROM appearances a
+        WHERE a.playerid = p.playerid
+    ) AS games_played,
+    (
+        SELECT a.teamid
+        FROM appearances a
+        WHERE a.playerid = p.playerid
+    ) AS team
+FROM people p
+ORDER BY p.height ASC
 LIMIT 1
-)AS team_id,
-(
-SELECT	
-)
+
+---Answer: Eddie Gaedel, 43 inches, SLA
 
 -- 3. Find all players in the database who played at Vanderbilt University. Create a list showing each player’s first and last names as well as the total salary they earned in the major leagues. Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?
-	
+
+SELECT *
+FROM collegeplaying
+
+SELECT c.playerid,
+		c.schoolid,
+		SUM (s.salary) AS total_salary
+FROM collegeplaying AS c
+	LEFT JOIN salaries AS s
+	ON c.playerid = s.playerid
+WHERE c.schoolid = 'vandy'
+GROUP BY C.playerid, c.schoolid
+HAVING SUM(s.salary) IS NOT NULL
+ORDER BY total_salary DESC
+
+
+---Answer: David Price
 
 -- 4. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
-   
+
+SELECT *
+FROM fielding
+
+SELECT
+    CASE
+        WHEN pos = 'OF' THEN 'Outfield'
+        WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+        WHEN pos IN ('P', 'C') THEN 'Battery'
+        ELSE 'None'
+    END AS position_group,
+    SUM(po) AS total_putouts
+FROM fielding
+WHERE yearid = 2016
+GROUP BY
+    CASE
+        WHEN pos = 'OF' THEN 'Outfield'
+        WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+        WHEN pos IN ('P', 'C') THEN 'Battery'
+        ELSE 'None'
+    END
+ORDER BY total_putouts DESC
+
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
    
 
