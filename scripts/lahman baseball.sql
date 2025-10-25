@@ -88,12 +88,98 @@ GROUP BY
 ORDER BY total_putouts DESC
 
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
+
+SELECT *
+FROM teams
    
+SELECT 
+yearid/10*10 AS decade,
+ROUND (SUM(SO) / SUM(g),2)AS avg_strikeout,
+ROUND (SUM(hr) / SUM(g),2)AS avg_homeruns
+FROM teams
+WHERE yearid >= 1920
+GROUP BY decade
+ORDER BY decade
+----------
+SELECT 
+yearid/10*10 AS decade,
+ROUND (SUM(so)::NUMERIC/SUM(g)::NUMERIC,2) AS avg_strikeouts,
+ROUND (SUM(HR)::NUMERIC/SUM(g)::NUMERIC,2) AS avg_homeruns
+FROM teams
+WHERE yearid >= 1920
+GROUP BY decade
+ORDER BY decade
+   
+--- Answer: The over all trend is that strikeouts tend to increase by decade as do homeruns as an over all trend. 
+
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
-	
+
+SELECT *
+FROM batting
+-----------------
+SELECT playerid, yearid, stolen_base_attempts,
+ROUND(stolen_bases*1.0 / stolen_base_attempts,2) AS success_rate
+FROM (
+SELECT
+playerid,yearid,
+sb+cs AS stolen_base_attempts,sb AS stolen_bases
+FROM batting
+WHERE yearid = 2016) AS t
+WHERE stolen_base_attempts > 20
+ORDER BY success_rate DESC
+LIMIT 1
 
 -- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
+
+SELECT *
+FROM teams
+-------TEAMS WITH MOST WINS, NO WS----
+SELECT teamid, yearid, w AS wins
+FROM teams
+WHERE wswin = 'N'
+ AND yearid >= 1970
+ AND yearid <> 1981
+ ORDER BY wins DESC
+LIMIT 1
+---ANSWER: SEA
+
+-------TEAMS WITH LEAST WINS AND WS-----
+SELECT teamid, yearid, w AS wins
+FROM teams
+WHERE wswin = 'Y'
+ AND yearid >= 1970
+ AND yearid <> 1981
+ ORDER BY wins
+ LIMIT 1
+---Answer: SLN
+ 
+-----Combined Query---
+SELECT
+no_ws.teamid AS team_no_ws,
+no_ws.yearid AS year_no_ws,
+no_ws.w AS most_wins_no_ws,
+with_ws.teamid AS team_with_ws,
+with_ws.yearid AS year_with_ws, 
+with_ws.w AS fewest_wins_with_ws
+FROM (
+SELECT teamid, yearid, w
+FROM teams
+WHERE wswin = 'N'
+	AND yearid >=1970
+	AND yearid <> 1981
+ORDER BY w DESC
+LIMIT 1	) AS no_ws
+CROSS JOIN (
+SELECT teamid, yearid, w
+FROM teams
+WHERE wswin = 'Y'
+AND yearid >= 1970
+AND yearid <> 1981
+ORDER BY w DESC
+LIMIT 1) AS with_ws
+
+--- ANSWER EXLCUDING 1981 SEA,NYA
 
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
