@@ -184,10 +184,65 @@ LIMIT 1) AS with_ws
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
+SELECT *
+FROM homegames
+----TOP 5-----
+SELECT p.park_name AS park_name, t.name AS team_name, 
+ROUND(h.attendance*1.0 / h.games, 2) AS avg_attendance
+FROM teams AS t
+LEFT JOIN homegames AS h
+ON h.team = t.teamid
+LEFT JOIN parks AS p
+ON h.park = p.park
+WHERE h.games >= 10 AND h.year = 2016
+GROUP BY p.park_name, t.name, h.attendance, h.games
+ORDER BY avg_attendance DESC
+LIMIT 5
+
+
+
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 
+SELECT *
+FROM awardsmanagers
+
+
+-----------------------------------
+WITH both_league_winners AS (
+	SELECT
+		playerid
+	FROM awardsmanagers
+	WHERE awardid = 'TSN Manager of the Year'
+		AND lgid IN ('AL', 'NL')
+	GROUP BY playerid
+	HAVING COUNT(DISTINCT lgid) = 2
+	) 
+
+
+SELECT
+	namefirst || ' ' || namelast AS full_name,
+	yearid,
+	lgid,
+	name
+FROM people
+INNER JOIN both_league_winners
+	USING(playerid)
+INNER JOIN awardsmanagers
+	USING(playerid)
+INNER JOIN managers
+	USING(playerid, yearid, lgid)
+INNER JOIN teams
+	USING(teamid,yearid,lgid)
+WHERE awardid = 'TSN Manager of the Year'
+ORDER BY full_name, yearid;
+
+
+
+
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+
+
 
 
 -- **Open-ended questions**
